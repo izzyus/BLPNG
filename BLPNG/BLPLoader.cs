@@ -12,9 +12,8 @@ namespace FileLoader
             using (FileStream reader = File.OpenRead(filename))
             {
                 var blp = new BlpFile(reader);
-                {
-                    bmp = blp.GetBitmap(0);
-                }
+                bmp = blp.GetBitmap(0);
+
                 reader.Close();
             }
         }

@@ -2,6 +2,7 @@
 using System.Windows.Forms;
 using System.IO;
 using FileLoader;
+using System.Diagnostics;
 
 namespace BLPNG
 {
@@ -30,8 +31,8 @@ namespace BLPNG
                 }
                 catch
                 {
-                    MessageBox.Show("File: "+Environment.CurrentDirectory + "\\settings\\" + "last_session.txt" + " is damaged", "Error", MessageBoxButtons.OK);
-                    File.Delete(Environment.CurrentDirectory + "\\settings\\" +" last_session.txt");
+                    MessageBox.Show("File: " + Environment.CurrentDirectory + "\\settings\\" + "last_session.txt" + " is damaged", "Error", MessageBoxButtons.OK);
+                    File.Delete(Environment.CurrentDirectory + "\\settings\\" + " last_session.txt");
                 }
             }
             else
@@ -53,12 +54,24 @@ namespace BLPNG
             DirectoryInfo directory = new DirectoryInfo(path);
             FileInfo[] BLPs = directory.GetFiles("*.blp", SearchOption.AllDirectories);
 
-            if(BLPs.Length == 0)
+            if (BLPs.Length == 0)
             {
+                MessageBox.Show("The selected folder doesn't contain any BLP files.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
-            //Progressbar thingy
+            // Confirmation popup
+            DialogResult dialogResult = MessageBox.Show($"You are about to convert {BLPs.Length} files.\n\nContinue?", "Confirmation", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            if (dialogResult == DialogResult.No)
+            {
+                MessageBox.Show("The operation has been canceled.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+
+            // Progressbar thingy
             progressBar1.Value = 0;
             progressBar1.Maximum = BLPs.Length;
 
@@ -72,13 +85,15 @@ namespace BLPNG
                     reader.LoadBLP(BLPFile.FullName);
                     reader.bmp.Save(BLPFile.FullName.ToLower().Replace(".blp", ".png"));
                     if (checkBox1.Checked)
-                    {
                         File.Delete(BLPFile.FullName);
-                    }
+
                     progressBar1.Value += 1;
                 }
             }
-            MessageBox.Show("Done converting " + BLPs.Length + " files", "", MessageBoxButtons.OK);
+
+            sw.Stop();
+
+            MessageBox.Show($"Done converting {BLPs.Length} files in {sw.Elapsed.ToString("mm\\:ss")}.", "Done", MessageBoxButtons.OK, MessageBoxIcon.Information);
             progressBar1.Value = 0;
         }
 
@@ -142,7 +157,7 @@ namespace BLPNG
             }
             else
             {
-                if(File.ReadAllText(Environment.CurrentDirectory + "\\settings\\" + "last_session.txt") != textBox1.Text)
+                if (File.ReadAllText(Environment.CurrentDirectory + "\\settings\\" + "last_session.txt") != textBox1.Text)
                 {
                     File.Delete(Environment.CurrentDirectory + "\\settings\\" + "last_session.txt");
                     File.WriteAllText(Environment.CurrentDirectory + "\\settings\\" + "last_session.txt", textBox1.Text);
