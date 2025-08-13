@@ -3,12 +3,14 @@ using System.Windows.Forms;
 using System.IO;
 using FileLoader;
 using System.Diagnostics;
+using System.Collections.Generic;
 
 namespace BLPNG
 {
     public partial class Form1 : Form
     {
         public string folderPath;
+        private List<string> errorLog = new List<string>();
 
         public Form1()
         {
@@ -79,21 +81,36 @@ namespace BLPNG
 
             foreach (FileInfo BLPFile in BLPs)
             {
-                //Console.WriteLine(BLPFile);
-                if (!File.Exists(BLPFile.FullName.ToLower().Replace(".blp", ".png")))
+                try
                 {
-                    reader.LoadBLP(BLPFile.FullName);
-                    reader.bmp.Save(BLPFile.FullName.ToLower().Replace(".blp", ".png"));
-                    if (checkBox1.Checked)
-                        File.Delete(BLPFile.FullName);
+                    //Console.WriteLine(BLPFile);
+                    if (!File.Exists(BLPFile.FullName.ToLower().Replace(".blp", ".png")))
+                    {
+                        reader.LoadBLP(BLPFile.FullName);
+                        reader.bmp.Save(BLPFile.FullName.ToLower().Replace(".blp", ".png"));
+                        if (checkBox1.Checked)
+                            File.Delete(BLPFile.FullName);
 
-                    progressBar1.Value += 1;
+                        progressBar1.Value += 1;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    errorLog.Add($"[{DateTime.Now}] {BLPFile.FullName} - {ex.Message}");
+                    continue;
                 }
             }
 
             sw.Stop();
 
-            MessageBox.Show($"Done converting {BLPs.Length} files in {sw.Elapsed.ToString("mm\\:ss")}.", "Done", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            if (errorLog.Count == 0)
+                MessageBox.Show($"Done converting {BLPs.Length} files in {sw.Elapsed.ToString("mm\\:ss")}.", "Done", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            else
+            {
+                MessageBox.Show($"Finished conversion with errors, in {sw.Elapsed.ToString("mm\\:ss")}\nPlease check the application folder for the detailed error log.", "Done with Errors", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                File.WriteAllLines(Environment.CurrentDirectory + "\\error_log.txt", errorLog);
+                errorLog.Clear();
+            }
             progressBar1.Value = 0;
         }
 
